@@ -22,5 +22,5 @@ EXPOSE 8550
 # ポート番号は docker-compose.yml や frontend/app/main.py と合わせる
 # CMD ["python", "main.py"] # main.py内でft.app()でポート等を指定しているためこれで良い
 # または flet run を使う場合:
-CMD ["flet", "run", "main.py", "--port", "8550", "--host", "0.0.0.0", "--web"]
+CMD ["python", "main.py"]
 # main.py内のft.app()で指定しているので CMD ["python", "main.py"] が推奨
