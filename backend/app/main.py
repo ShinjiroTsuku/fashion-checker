@@ -49,37 +49,24 @@ class PromptRequest(BaseModel):
     prompt: str
 
 try:
-    model = genai.GenerativeModel('gemini-2.0-flash') # 必要ならモデル名変更
+    model = genai.GenerativeModel('gemini-2.0-flash-lite') # 必要ならモデル名変更
 except Exception as e:
     print(f"Error creating Gemini model: {e}")
     exit()
 
-@app.post("/generate", summary="Generate text using Gemini")
-async def generate_text(request: PromptRequest):
-    """Generates text based on the provided prompt using the Gemini API."""
-    if not request.prompt:
-        raise HTTPException(status_code=400, detail="Prompt cannot be empty")
-    try:
-        response = model.generate_content(request.prompt)
+class Clothes(BaseModel):
+    name: str
 
-        if hasattr(response, 'text'):
-            generated_text = response.text
-        elif response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
-            generated_text = "".join(part.text for part in response.candidates[0].content.parts)
-        else:
-            print(f"Unexpected Gemini API response format: {response}")
-            raise HTTPException(status_code=500, detail="Failed to parse Gemini API response")
-
-        return {"generated_text": generated_text}
-    except Exception as e:
-        print(f"Error calling Gemini API: {e}")
-        error_detail = str(e)
-        raise HTTPException(status_code=500, detail=f"Failed to generate text: {error_detail}")
-
-@app.get("/", summary="Root endpoint")
-def read_root():
-    """Returns a welcome message indicating the backend is running."""
-    return {"message": "Gemini API Backend is running!"}
+@app.post("/register", response_model=list[str])
+def add_clothes(clothes: Clothes):
+    new_clothes = clothes.name
+    # ファイルに追記
+    with open("clothes_list.txt", "a") as f:
+        f.write(new_clothes + "\n")
+    # ファイルから全ての服装を読み込む
+    with open("clothes_list.txt", "r") as f:
+        clothes_list = [line.strip() for line in f.readlines() if line.strip()]
+    return clothes_list
 
 # Uvicornはdocker-compose.ymlのcommandで起動するので、ここでは不要
 # if __name__ == "__main__":
