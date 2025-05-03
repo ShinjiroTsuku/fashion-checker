@@ -1,0 +1,37 @@
+# docker-compose.yml
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend # backendディレクトリのDockerfileを使用
+    container_name: gemini_backend # コンテナ名を指定 (任意)
+    env_file:
+      - ./backend/.env # .envファイルから環境変数を読み込む
+    ports:
+      - "8000:8000" # ホストの8000番ポートをコンテナの8000番ポートにマッピング
+    volumes:
+      # 開発用にローカルのコード変更をコンテナに反映させる (任意)
+      - ./backend/app:/app
+    networks:
+      - gemini_network # 共通のネットワークに接続
+
+  frontend:
+    build: ./frontend # frontendディレクトリのDockerfileを使用
+    container_name: gemini_frontend # コンテナ名を指定 (任意)
+    ports:
+      - "8550:8550" # ホストの8550番ポートをコンテナの8550番ポートにマッピング
+    environment:
+      # フロントエンドコンテナ内で使用する環境変数
+      - API_BASE_URL=http://backend:8000 # バックエンドサービスのURL
+      - FLET_PORT=8550 # Fletアプリがリッスンするポート
+    volumes:
+      # 開発用にローカルのコード変更をコンテナに反映させる (任意)
+      - ./frontend/app:/app
+    depends_on:
+      - backend # backendサービスが起動してから起動する (完全に準備完了を待つわけではない)
+    networks:
+      - gemini_network # 共通のネットワークに接続
+
+networks:
+  gemini_network: # サービス間通信用のカスタムネットワーク
+    driver: bridge

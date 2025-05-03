@@ -1,0 +1,5 @@
+# backend/app/requirements.txt
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0 # standardで必要な依存関係も入れる
+python-dotenv>=1.0.0
+google-generativeai>=0.3.0
