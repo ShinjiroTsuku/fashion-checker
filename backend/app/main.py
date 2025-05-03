@@ -48,12 +48,15 @@ app.add_middleware(
 )
 
 try:
-    model = genai.GenerativeModel('gemini-2.0-flash') # 必要ならモデル名変更
+    model = genai.GenerativeModel('gemini-2.0-flash-lite') # 必要ならモデル名変更
 except Exception as e:
     print(f"Error creating Gemini model: {e}")
     exit()
 
 class Prefecture_city(BaseModel):
+    name: str
+      
+class Clothes(BaseModel):
     name: str
 
 @app.post("/generate", response_model = dict, summary="Generate text using Gemini")
@@ -156,12 +159,13 @@ async def generate_text(prefecture_city: Prefecture_city):
         print(f"Unexpected error: {e}")
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
-@app.get("/", summary="Root endpoint")
-def read_root():
-    """Returns a welcome message indicating the backend is running."""
-    return {"message": "Gemini API Backend is running!"}
-
-# Uvicornはdocker-compose.ymlのcommandで起動するので、ここでは不要
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.post("/register", response_model=list[str])
+def add_clothes(clothes: Clothes):
+    new_clothes = clothes.name
+    # ファイルに追記
+    with open("clothes_list.txt", "a") as f:
+        f.write(new_clothes + "\n")
+    # ファイルから全ての服装を読み込む
+    with open("clothes_list.txt", "r") as f:
+        clothes_list = [line.strip() for line in f.readlines() if line.strip()]
+    return clothes_list
