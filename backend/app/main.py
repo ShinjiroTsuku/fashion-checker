@@ -49,7 +49,7 @@ class PromptRequest(BaseModel):
     prompt: str
 
 try:
-    model = genai.GenerativeModel('gemini-pro') # 必要ならモデル名変更
+    model = genai.GenerativeModel('gemini-2.0-flash') # 必要ならモデル名変更
 except Exception as e:
     print(f"Error creating Gemini model: {e}")
     exit()
