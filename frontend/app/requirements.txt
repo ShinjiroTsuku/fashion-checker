@@ -1,3 +1,4 @@
 # frontend/app/requirements.txt
-flet>=0.20.0 # バージョンは適宜調整
+flet
+flet_desktop
 requests>=2.28.0
