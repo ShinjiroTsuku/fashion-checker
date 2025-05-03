@@ -15,7 +15,7 @@ FLET_PORT = int(os.getenv("FLET_PORT", 8550))
 def main(page: ft.Page):
     page.title = "fashion checker"
 
-    selected_name = ft.Ref[ft.Dropdown]() # ドロップダウンの選択を参照
+    selected_name = ft.Ref() # ドロップダウンの選択を参照
     fashion_text = "" # APIの返答をここに保持
 
     def fetch_fashion_advice():
@@ -52,10 +52,11 @@ def main(page: ft.Page):
                     ft.Text("服装チェッカー",size=20),
                     ft.Text("場所:"),
                     ft.Dropdown(
+                        ref=selected_name,
                         options=[
                             ft.dropdown.Option("大阪府_堺市"),
-                            ft.dropdown.Option("東京"),
-                            ft.dropdown.Option("愛知"),
+                            ft.dropdown.Option("大阪府_大阪市"),
+                            ft.dropdown.Option("大阪府_岸和田市"),
                         ],
                         autofocus=True,
                     ),
