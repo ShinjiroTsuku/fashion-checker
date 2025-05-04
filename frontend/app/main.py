@@ -44,7 +44,14 @@ def main(page: ft.Page):
             data = response.json()
             page.cloth_list = data
         except Exception as e:
-            cloth_text = f"エラー発生: {e}"
+            page.dialog = ft.AlertDialog(
+                title=ft.Text("エラー"),
+                content=ft.Text(f"エラー発生: {e}"),
+                actions=[ft.TextButton("OK", on_click=lambda _: page.dialog.close())]
+            )
+            page.dialog.open = True
+            page.update()
+            return 
         page.go("/list")
 
     
