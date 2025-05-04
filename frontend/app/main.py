@@ -13,6 +13,7 @@ FLET_PORT = int(os.getenv("FLET_PORT", 8550))
 
 def main(page: ft.Page):
     page.title = "fashion checker"
+    page.theme_mode = ft.ThemeMode.LIGHT
     cloth_name_field = ft.Ref[ft.TextField]()
     cloth_text = ""
     loading = ft.Ref[ft.ProgressRing]() # ローディングアニメーション用
@@ -147,7 +148,7 @@ def main(page: ft.Page):
                     [
                         ft.Row(
                             [
-                                ft.Text("場所：", size=16),
+                                ft.Text("場所：", size=20),
                                 ft.Dropdown(
                                     ref=selected_name,
                                     on_change=on_dropdown_change,
@@ -170,8 +171,8 @@ def main(page: ft.Page):
                                     on_click=lambda _: fetch_fashion_advice(),
                                     disabled=True,
                                     style=ft.ButtonStyle(
-                                        bgcolor=ft.colors.WHITE,
-                                        color=ft.colors.BLUE_900,
+                                        bgcolor=ft.Colors.WHITE,
+                                        color=ft.Colors.BLUE_700,
                                         padding=20,
                                         shape=ft.RoundedRectangleBorder(radius=10),
                                         text_style=ft.TextStyle(size=20),
