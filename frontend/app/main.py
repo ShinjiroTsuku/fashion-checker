@@ -7,8 +7,6 @@ import os
 # バックエンドAPIのURL (Docker Composeのサービス名を利用)
 # 環境変数から取得するか、デフォルト値を設定
 API_BASE_URL = os.getenv("API_BASE_URL", "http://backend:8000")
-API_URL = f"{API_BASE_URL}/register"
-API_URL_GENERATE = f"{API_BASE_URL}/generate"
 
 # Fletアプリがリッスンするポート (Dockerfile CMDと合わせる)
 FLET_PORT = int(os.getenv("FLET_PORT", 8550))
@@ -17,6 +15,36 @@ def main(page: ft.Page):
     page.title = "fashion checker"
     cloth_name_field = ft.Ref[ft.TextField]()
     cloth_text = ""
+    loading = ft.Ref[ft.ProgressRing]() # ローディングアニメーション用
+    fashion_button = ft.Ref[ft.ElevatedButton]()
+
+    def create_blue_button(text, on_click, width=250):
+        return ft.ElevatedButton(
+            text,
+            on_click=on_click,
+            style=ft.ButtonStyle(
+                bgcolor=ft.colors.BLUE_900,
+                color=ft.colors.WHITE,
+                padding=20,
+                shape=ft.RoundedRectangleBorder(radius=10),
+                text_style=ft.TextStyle(size=20),
+            ),
+            width=width,
+    )
+
+    def create_white_button(text, on_click, width=250):
+        return ft.ElevatedButton(
+            text,
+            on_click=on_click,
+            style=ft.ButtonStyle(
+                bgcolor=ft.colors.WHITE,
+                color=ft.colors.BLUE_900,
+                padding=20,
+                shape=ft.RoundedRectangleBorder(radius=10),
+                text_style=ft.TextStyle(size=20),
+            ),
+            width=width,
+    )
 
     if not hasattr(page, "cloth_list"):
         page.cloth_list = []
@@ -36,7 +64,7 @@ def main(page: ft.Page):
         try:
             json_data = json.dumps({"name": name})
             response = requests.post(
-                API_URL,
+                f"{API_BASE_URL}/register",
                 data = json_data,
                 headers={"Content-Type": "application/json"},
                 timeout = 10
@@ -74,7 +102,7 @@ def main(page: ft.Page):
             return
         try:
             response = requests.post(
-                API_URL_GENERATE,
+                f"{API_BASE_URL}/generate",
                 json={"name": name},
                 timeout=10
             )
@@ -85,105 +113,121 @@ def main(page: ft.Page):
             fashion_text = f"エラー発生: {e}"
         page.go("/confirm")
 
+    def common_view(title, controls):
+        return ft.View(
+            route=page.route,
+            controls=[
+                ft.Column(
+                    [
+                        ft.Text(title, size=30, weight="bold", text_align="center")
+                    ] + controls,
+                    alignment="center",
+                    horizontal_alignment="center",
+                    spacing=40,
+                )
+            ],
+            vertical_alignment="center",
+            horizontal_alignment="center",
+        )
+
     def route_change(route):
         page.views.clear()
-        page.views.append(
-            ft.View(
-                "/",
-                controls=[
-                    ft.Column(
-                        [
-                            ft.Text("服装チェッカー", size=30, weight="bold", text_align="center"),
-                            ft.Row(
-                                [
-                                    ft.Text("場所：", size=16),
-                                    ft.Dropdown(
-                                        ref=selected_name,
-                                        options=[
-                                            ft.dropdown.Option("大阪府_堺市"),
-                                            ft.dropdown.Option("大阪府_大阪市"),
-                                            ft.dropdown.Option("大阪府_岸和田市"),
-                                        ],
-                                        width=200,
-                                    ),
-                                ],
-                                alignment="center",
-                                spacing=10,
-                            ),
-                            ft.ElevatedButton(
-                                "服装を見る",
-                                on_click=lambda _: fetch_fashion_advice(),
-                                style=ft.ButtonStyle(
-                                    bgcolor=ft.colors.BLUE_900,
-                                    color=ft.colors.WHITE,
-                                    padding=20,
-                                    shape=ft.RoundedRectangleBorder(radius=10),
-                                    text_style=ft.TextStyle(size=20),
-                                ),
-                                width=250,
-                            ),
-                            ft.OutlinedButton(
-                                "服装一覧",
-                                on_click=lambda _: page.go("/list"),
-                                style=ft.ButtonStyle(
-                                    padding=15,
-                                    text_style=ft.TextStyle(size=14),
-                                    shape=ft.RoundedRectangleBorder(radius=8),
-                                ),
-                                width=150,
-                            ),
-                        ],
-                        alignment="center",
-                        horizontal_alignment="center",
-                        spacing=60,
-                    )
-                ],
-                vertical_alignment="center",
-                horizontal_alignment="center",
-            )
-        )
-        if page.route == "/confirm":
+        # ホーム画面
+        if page.route == "/":
             page.views.append(
-                ft.View(
-                    "/confirm",
+                common_view(
+                    "服装チェッカー",
                     [
-                        ft.Text("服装の確認"),
-                        ft.Icon(name=ft.Icons.FACE, size=30),
-                        ft.Markdown(fashion_text),  # ここでAPIから取得した結果を表示
-                        ft.ElevatedButton("戻る", on_click=lambda _: page.go("/")),
-                        ft.ElevatedButton("再生成する", on_click=lambda _: page.go("/confirm")),
-                    ],
+                        ft.Row(
+                            [
+                                ft.Text("場所：", size=16),
+                                ft.Dropdown(
+                                    ref=selected_name,
+                                    options=[
+                                        ft.dropdown.Option("大阪府_堺市"),
+                                        ft.dropdown.Option("大阪府_大阪市"),
+                                        ft.dropdown.Option("大阪府_岸和田市"),
+                                    ],
+                                    width=200,
+                                ),
+                            ],
+                            alignment="center",
+                            spacing=10,
+                        ),
+                        ft.Row(
+                            [
+                                create_blue_button("服装を見る", on_click=lambda _: fetch_fashion_advice()),
+                                ft.ProgressRing(ref=loading, visible=False),
+                            ],
+                            alignment="center",
+                            spacing=20,
+                        ),
+                        ft.OutlinedButton(
+                            "服装一覧",
+                            on_click=lambda _: page.go("/list"),
+                            width=150,
+                        )
+                    ]
                 )
             )
+
+        # confirm画面
+        if page.route == "/confirm":
+            page.views.append(
+                common_view(
+                    "服装の確認",
+                    [
+                        ft.Icon(name=ft.Icons.FACE, size=30),
+                        ft.Markdown(fashion_text),
+                        ft.Row(
+                            [
+                                create_white_button("戻る", on_click=lambda _: page.go("/")),
+                                create_blue_button("再生成する", on_click=lambda _: fetch_fashion_advice()),
+                            ],
+                            alignment="center",
+                            spacing=20,
+                        ),
+                    ]
+                )
+            )
+
+        # list画面
         if page.route == "/list":
-            controls = [ft.Text("服装一覧")]
+            controls = []
             if hasattr(page, "cloth_list") and page.cloth_list:
                 for item in page.cloth_list:
                     controls.append(
                         ft.Container(
                             content=ft.Text(item),
                             padding=2,
-                            margin=ft.margin.only(bottom=2)
+                            margin=ft.margin.only(bottom=2),
+                            alignment=ft.alignment.center,
                         )
                     )
 
-            controls.append(ft.ElevatedButton("戻る", on_click=lambda _: page.go("/")))
-            controls.append(ft.ElevatedButton("服装を登録する", on_click=lambda _: page.go("/register")))
-
-            # 作成したリストをViewに渡す
-            page.views.append(
-                ft.View(
-                    "/list",
-                    controls=controls
+            controls.append(
+                ft.Row(
+                    [
+                        create_white_button("戻る", on_click=lambda _: page.go("/")),
+                        create_blue_button("服装を登録する", on_click=lambda _: page.go("/register")),
+                    ],
+                    alignment="center",
+                    spacing=20,
                 )
-            ) 
+            )
+
+            page.views.append(
+                common_view("服装一覧", controls)
+            )
+
+        # register画面
         if page.route == "/register":
             page.views.append(
-                ft.View(
-                    "/register",
+                common_view(
+                    "服装登録",
                     [
                         ft.Text("服の名称:"),
-                        ft.TextField(ref=cloth_name_field),
+                        ft.TextField(ref=cloth_name_field, width=300),
                         ft.Text("ジャンル:"),
                         ft.Dropdown(
                         options=[
@@ -191,15 +235,22 @@ def main(page: ft.Page):
                         ],
                         autofocus=True,
                         ),
-                        ft.ElevatedButton("戻る", on_click=lambda _: page.go("/list")),
-                        ft.ElevatedButton("登録", on_click=add_cloth), 
-                    ],
+                        ft.Row(
+                            [
+                                create_white_button("戻る", on_click=lambda _: page.go("/list")),
+                                create_blue_button("登録", on_click=add_cloth),
+                            ],
+                            alignment="center",
+                            spacing=20,
+                        ),
+                    ]
                 )
-            ) 
+            )
+
         page.update()
 
     def view_pop(view):
-        pages.views.pop()
+        page.views.pop()
         top_view = page.views[-1]
         page.go(top_view.route)
 
