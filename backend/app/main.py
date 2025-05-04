@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import datetime
-import weather
+import services.weather as weather
 
 # .envファイルをコンテナ内で読み込む場合 (Composeで環境変数として渡す方が一般的)
 # load_dotenv() # Docker Composeのenv_fileを使うので通常不要
@@ -77,7 +77,7 @@ async def generate_text(prefecture_city: Prefecture_city):
         # clothes_list.txtからデータベース情報を取得
         clothes_data = "服装データが登録されていません。"
         try:
-            with open("clothes_list.txt", "r", encoding="utf-8") as f:
+            with open("data/clothes_list.txt", "r", encoding="utf-8") as f:
                 clothes_data = f.read().strip()
                 if not clothes_data:
                     clothes_data = "服装データが登録されていません。"
@@ -129,7 +129,7 @@ async def generate_text(prefecture_city: Prefecture_city):
 
         # プロンプトをファイルから読み込む
         try:
-            with open("prompt_template.txt", "r", encoding="utf-8") as f:
+            with open("data/prompt_template.txt", "r", encoding="utf-8") as f:
                 prompt_template = f.read()
                 
             # テンプレートに変数を埋め込む
@@ -144,7 +144,7 @@ async def generate_text(prefecture_city: Prefecture_city):
             print(f"プロンプトテンプレートの読み込みに失敗しました: {e}")
         
         # デバッグ用にプロンプトをファイルに保存
-        with open("prompt.txt", "w", encoding="utf-8") as f:
+        with open("data/prompt.txt", "w", encoding="utf-8") as f:
             f.write(prompt + "\n")
 
         try:
@@ -173,10 +173,10 @@ async def generate_text(prefecture_city: Prefecture_city):
 def add_clothes(clothes: Clothes):
     new_clothes = clothes.name
     # ファイルに追記
-    with open("clothes_list.txt", "a") as f:
+    with open("data/clothes_list.txt", "a") as f:
         f.write(new_clothes + "\n")
     # ファイルから全ての服装を読み込む
-    with open("clothes_list.txt", "r") as f:
+    with open("data/clothes_list.txt", "r") as f:
         clothes_list = [line.strip() for line in f.readlines() if line.strip()]
     return clothes_list
 
@@ -189,7 +189,7 @@ def delete_clothes(clothes: ClothesToDelete):
     
     try:
         # ファイルから服装リストを読み込む
-        with open("clothes_list.txt", "r", encoding="utf-8") as f:
+        with open("data/clothes_list.txt", "r", encoding="utf-8") as f:
             clothes_list = [line.strip() for line in f.readlines() if line.strip()]
         
         # 削除対象の服装がリストにあるか確認
@@ -200,7 +200,7 @@ def delete_clothes(clothes: ClothesToDelete):
         clothes_list.remove(clothes_to_delete)
         
         # 更新されたリストをファイルに書き込む
-        with open("clothes_list.txt", "w", encoding="utf-8") as f:
+        with open("data/clothes_list.txt", "w", encoding="utf-8") as f:
             for item in clothes_list:
                 f.write(f"{item}\n")
         
