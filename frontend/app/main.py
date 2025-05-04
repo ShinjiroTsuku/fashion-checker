@@ -26,7 +26,7 @@ def main(page: ft.Page):
         if not name:
             page.dialog = ft.AlertDialog(
                  title=ft.Text("エラー"),
-                 content=ft.Text("場所が選択されていません。"),
+                 content=ft.Text("服の名前が入力されていません。"),
                  actions=[ft.TextButton("OK", on_click=lambda _: page.dialog.close())]
             )
             page.dialog.open = True
