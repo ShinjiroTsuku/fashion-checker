@@ -59,6 +59,9 @@ class Prefecture_city(BaseModel):
 class Clothes(BaseModel):
     name: str
 
+class ClothesToDelete(BaseModel):
+    name: str
+
 @app.post("/generate", response_model = dict, summary="Generate text using Gemini")
 async def generate_text(prefecture_city: Prefecture_city):
     """
@@ -185,4 +188,33 @@ def add_clothes(clothes: Clothes):
         clothes_list = [line.strip() for line in f.readlines() if line.strip()]
     return clothes_list
 
-
+@app.post("/delete", response_model=list[str])
+def delete_clothes(clothes: ClothesToDelete):
+    """
+    指定された服装をデータベース(clothes_list.txt)から削除。
+    """
+    clothes_to_delete = clothes.name
+    
+    try:
+        # ファイルから服装リストを読み込む
+        with open("clothes_list.txt", "r", encoding="utf-8") as f:
+            clothes_list = [line.strip() for line in f.readlines() if line.strip()]
+        
+        # 削除対象の服装がリストにあるか確認
+        if clothes_to_delete not in clothes_list:
+            raise HTTPException(status_code=404, detail=f"衣類 '{clothes_to_delete}' は見つかりませんでした")
+        
+        # 服装を削除
+        clothes_list.remove(clothes_to_delete)
+        
+        # 更新されたリストをファイルに書き込む
+        with open("clothes_list.txt", "w", encoding="utf-8") as f:
+            for item in clothes_list:
+                f.write(f"{item}\n")
+        
+        return clothes_list
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"服装の削除中にエラーが発生しました: {e}")
+        raise HTTPException(status_code=500, detail=f"服装の削除中にエラーが発生しました: {str(e)}")
