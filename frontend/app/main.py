@@ -129,6 +129,13 @@ def main(page: ft.Page):
             vertical_alignment="center",
             horizontal_alignment="center",
         )
+    
+    # 選択されていればボタンを有効にし、されていなければ無効にする
+    selected_name = ft.Ref[ft.Dropdown]()
+    view_button = ft.Ref[ft.ElevatedButton]()
+    def on_dropdown_change(e):
+        view_button.current.disabled = not bool(selected_name.current.value)
+        page.update()
 
     def route_change(route):
         page.views.clear()
@@ -143,6 +150,7 @@ def main(page: ft.Page):
                                 ft.Text("場所：", size=16),
                                 ft.Dropdown(
                                     ref=selected_name,
+                                    on_change=on_dropdown_change,
                                     options=[
                                         ft.dropdown.Option("大阪府_堺市"),
                                         ft.dropdown.Option("大阪府_大阪市"),
@@ -156,7 +164,20 @@ def main(page: ft.Page):
                         ),
                         ft.Row(
                             [
-                                create_blue_button("服装を見る", on_click=lambda _: fetch_fashion_advice()),
+                                # デフォルトで押せないようにするため、ここだけcreate_blue_button使ってません
+                                ft.ElevatedButton(
+                                    "服装を見る",
+                                    on_click=lambda _: fetch_fashion_advice(),
+                                    disabled=True,
+                                    style=ft.ButtonStyle(
+                                        bgcolor=ft.colors.WHITE,
+                                        color=ft.colors.BLUE_900,
+                                        padding=20,
+                                        shape=ft.RoundedRectangleBorder(radius=10),
+                                        text_style=ft.TextStyle(size=20),
+                                    ),
+                                    width=250,
+                                ),
                                 ft.ProgressRing(ref=loading, visible=False),
                             ],
                             alignment="center",
