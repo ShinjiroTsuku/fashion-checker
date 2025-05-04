@@ -84,6 +84,9 @@ def main(page: ft.Page):
             return 
         page.go("/list")
 
+    if not hasattr(page, "weather_icon_url"):
+        page.weather_icon_url = ""
+
     # 服装アドバイス取得
     def fetch_fashion_advice(e=None):
         nonlocal fashion_text
@@ -107,9 +110,10 @@ def main(page: ft.Page):
             response.raise_for_status()
             data = response.json()
             fashion_text = data.get("generated_text", "取得失敗")
+            page.weather_icon_url = data.get("daily_icon_url", "取得失敗")
         except Exception as ex:
             fashion_text = f"エラー発生: {ex}"
-
+            page.weather_icon_url = ""
         page.go("/confirm")
 
     # 汎用ボタン
@@ -153,6 +157,50 @@ def main(page: ft.Page):
             vertical_alignment="center",
             horizontal_alignment="center"
         )
+
+    # 吹き出し形式のコンテナを生成
+    def create_speech_bubble(content: str) -> ft.Container:
+        content_widgets = []
+    
+        if page.weather_icon_url:
+            content_widgets.append(
+                ft.Image(
+                    src=page.weather_icon_url,
+                    width=50,
+                    height=50,
+                    fit=ft.ImageFit.CONTAIN,
+                )
+            )
+    
+        content_widgets.append(ft.Markdown(content))
+    
+        return ft.Container(
+            content=ft.Row(
+                [
+                    ft.Container(
+                        content=ft.Icon(ft.icons.FACE, size=30),
+                        alignment=ft.alignment.center,
+                        padding=ft.padding.only(top=10),
+                    ),
+                    ft.Container(
+                        content=ft.Column(
+                            content_widgets,
+                            scroll=ft.ScrollMode.AUTO,
+                            spacing=10,
+                        ),
+                        padding=20,
+                        bgcolor=ft.colors.with_opacity(0.2, ft.colors.SURFACE_VARIANT),
+                        border_radius=10,
+                        width=300,
+                        expand=True,
+                    ),
+                ],
+                alignment="start",
+                spacing=15,
+                vertical_alignment="start",
+            ),
+            padding=ft.padding.only(left=50, right=50, top=10, bottom=10), 
+        ) 
 
     # ルートハンドリング
     def route_change(route):
@@ -206,14 +254,35 @@ def main(page: ft.Page):
                 common_view(
                     "服装の確認",
                     [
-                        ft.Markdown(fashion_text),
-                        ft.Row([
-                            create_white_button("戻る", on_click=lambda _: page.go("/")),
-                            create_blue_button("再生成する", on_click=fetch_fashion_advice)
-                        ], alignment="center", spacing=20)
+                        create_speech_bubble(fashion_text),
+                        ft.Row(
+                            [
+                                create_white_button("戻る", on_click=lambda _: page.go("/")),
+                                create_blue_button("再生成する", on_click=lambda _: fetch_fashion_advice()),
+                            ],
+                            alignment="center",
+                            spacing=20,
+                        ),
                     ]
                 )
-            )
+            ) 
+            
+            page.views.append(
+                common_view(
+                    "服装の確認",
+                    [
+                        create_speech_bubble(fashion_text),
+                        ft.Row(
+                            [
+                                create_white_button("戻る", on_click=lambda _: page.go("/")),
+                                create_blue_button("再生成する", on_click=lambda _: fetch_fashion_advice()),
+                            ],
+                            alignment="center",
+                            spacing=20,
+                        ),
+                    ]
+                )
+            ) 
 
         elif page.route == "/list":
             controls = []
