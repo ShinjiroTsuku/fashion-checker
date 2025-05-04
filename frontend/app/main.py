@@ -17,6 +17,7 @@ def main(page: ft.Page):
     loading = ft.Ref[ft.ProgressRing]()
     selected_prefecture = ft.Ref[ft.Dropdown]()
     selected_city = ft.Ref[ft.Dropdown]()
+    cloth_text = ""
 
     # データ
     fashion_text = ""
@@ -48,6 +49,40 @@ def main(page: ft.Page):
             selected_city.current.value = None
             page.update()
         update_view_button_state()
+
+    def add_cloth(e):
+        nonlocal cloth_text
+        name = cloth_name_field.current.value
+        if not name:
+            page.dialog = ft.AlertDialog(
+                 title=ft.Text("エラー"),
+                 content=ft.Text("服の名前が入力されていません。"),
+                 actions=[ft.TextButton("OK", on_click=lambda _: page.dialog.close())]
+            )
+            page.dialog.open = True
+            page.update()
+            return
+        try:
+            json_data = json.dumps({"name": name})
+            response = requests.post(
+                f"{API_BASE_URL}/register",
+                data = json_data,
+                headers={"Content-Type": "application/json"},
+                timeout = 10
+            )
+            response.raise_for_status()
+            data = response.json()
+            page.cloth_list = data
+        except Exception as e:
+            page.dialog = ft.AlertDialog(
+                title=ft.Text("エラー"),
+                content=ft.Text(f"エラー発生: {e}"),
+                actions=[ft.TextButton("OK", on_click=lambda _: page.dialog.close())]
+            )
+            page.dialog.open = True
+            page.update()
+            return 
+        page.go("/list")
 
     # 服装アドバイス取得
     def fetch_fashion_advice(e=None):
@@ -203,7 +238,7 @@ def main(page: ft.Page):
                         ft.Dropdown(options=[ft.dropdown.Option("ジャケット")], autofocus=True),
                         ft.Row([
                             create_white_button("戻る", on_click=lambda _: page.go("/list")),
-                            create_blue_button("登録", on_click=lambda _: None)  # 仮
+                            create_blue_button("登録", on_click=add_cloth)
                         ], alignment="center", spacing=20)
                     ]
                 )
