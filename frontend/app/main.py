@@ -149,7 +149,7 @@ def main(page: ft.Page):
                     [
                         ft.Text("服装の確認"),
                         ft.Icon(name=ft.Icons.FACE, size=30),
-                        ft.Text(fashion_text),  # ここでAPIから取得した結果を表示
+                        ft.Markdown(fashion_text),  # ここでAPIから取得した結果を表示
                         ft.ElevatedButton("戻る", on_click=lambda _: page.go("/")),
                         ft.ElevatedButton("再生成する", on_click=lambda _: page.go("/confirm")),
                     ],
