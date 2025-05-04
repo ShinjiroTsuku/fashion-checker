@@ -7,7 +7,6 @@ import os
 # バックエンドAPIのURL (Docker Composeのサービス名を利用)
 # 環境変数から取得するか、デフォルト値を設定
 API_BASE_URL = os.getenv("API_BASE_URL", "http://backend:8000")
-
 # Fletアプリがリッスンするポート (Dockerfile CMDと合わせる)
 FLET_PORT = int(os.getenv("FLET_PORT", 8550))
 
@@ -17,6 +16,15 @@ def main(page: ft.Page):
     cloth_text = ""
     loading = ft.Ref[ft.ProgressRing]() # ローディングアニメーション用
     fashion_button = ft.Ref[ft.ElevatedButton]()
+    selected_prefecture = ft.Ref[ft.Dropdown]()
+    selected_city = ft.Ref[ft.Dropdown]()
+    fashion_text = "" # APIの返答をここに保持
+
+    prefecture_city_data = {
+        "東京都": ["渋谷区", "新宿区", "港区"],
+        "大阪府": ["堺市", "大阪市", "岸和田市"],
+        "北海道": ["札幌市", "旭川市", "函館市"],
+    }
 
     def create_blue_button(text, on_click, width=250):
         return ft.ElevatedButton(
@@ -74,6 +82,15 @@ def main(page: ft.Page):
                 )
             ]
         )
+    
+    # 都道府県を選択したときに
+    def update_cities(e):
+        prefecture = selected_prefecture.current.value
+        if prefecture and prefecture in prefecture_city_data:
+            cities = prefecture_city_data[prefecture]
+            selected_city.current.options = [ft.dropdown.Option(city) for city in cities]
+            selected_city.current.value = None
+            page.update()
 
     if not hasattr(page, "cloth_list"):
         page.cloth_list = []
@@ -112,11 +129,6 @@ def main(page: ft.Page):
             return 
         page.go("/list")
 
-    
-
-    selected_name = ft.Ref() # ドロップダウンの選択を参照
-    fashion_text = "" # APIの返答をここに保持
-
     def fetch_fashion_advice():
         nonlocal fashion_text
 
@@ -126,7 +138,7 @@ def main(page: ft.Page):
         loading.current.visible = True
         page.update()
 
-        name = selected_name.current.value # ドロップダウンの現在の値を保持
+        name = f"{selected_prefecture.current.value}_{selected_city.current.value}" # ドロップダウンの現在の値を保持
         if not name: # 場所が選択されていない時の処理
             page.dialog = ft.AlertDialog(
                 title=ft.Text("エラー"),
@@ -181,16 +193,19 @@ def main(page: ft.Page):
                     [
                         ft.Row(
                             [
-                                ft.Text("場所：", size=16),
-                                ft.Dropdown(
-                                    ref=selected_name,
-                                    options=[
-                                        ft.dropdown.Option("大阪府_堺市"),
-                                        ft.dropdown.Option("大阪府_大阪市"),
-                                        ft.dropdown.Option("大阪府_岸和田市"),
-                                    ],
-                                    width=200,
-                                ),
+                            ft.Text("都道府県："),
+                            ft.Dropdown(
+                                ref=selected_prefecture,
+                                options=[ft.dropdown.Option(pref) for pref in prefecture_city_data.keys()],
+                                on_change=update_cities,
+                                width=200,
+                            ),
+                            ft.Text("市区町村："),
+                            ft.Dropdown(
+                                ref=selected_city,
+                                options=[],  # 最初は空
+                                width=200,
+                            ),
                             ],
                             alignment="center",
                             spacing=10,
