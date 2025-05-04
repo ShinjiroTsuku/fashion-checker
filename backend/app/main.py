@@ -127,32 +127,24 @@ async def generate_text(prefecture_city: Prefecture_city):
             
             weather_summary += f"{time} - {desc}, 気温: {temp}℃, 体感温度: {feels_like}℃，降水確率: {prob_precipitation}%，降水量: {precip}mm\n"
 
-        prompt = f"""
-あなたは優秀な天気予報士です。
-以下のテキストファイルで与えられる天気予報を参考にし、今日の服装を提案してください。
-要件は以下のとおりです。
-- まず天気を1時間ごとに説明し、次に服装を提案してください。
-- 降水確率が50%以上の場合は、雨具を提案してください。
-- 天気を1時間ごとに説明するときは、時間帯ごとに箇条書きで表示してください。
-- 1日の途中で着替えることは想定せず、想定される活動時間をいくつか示し、それぞれの場合で適切な服装を提案してください。
-- 一文目は、「かしこまりました」や「承知しました」とせず、天気の説明から始めてください。
-- '--- END OF FILE data.txt ---'は表示しないでください。
-- 服装は、テキストファイル内の[服一覧]にあるものから必ず選択してください。
-- 適切な服がない場合は、他の服を提案していることを明言してから他の服を提案してください。
-
-## 現在時刻
-現在時刻: {now_str}
-
-## 天気情報
-場所: {prefecture}{city}
-{weather_summary}
-
-## 利用可能な衣類データ
-{clothes_data}
-            """
+        # プロンプトをファイルから読み込む
+        try:
+            with open("prompt_template.txt", "r", encoding="utf-8") as f:
+                prompt_template = f.read()
+                
+            # テンプレートに変数を埋め込む
+            prompt = prompt_template.format(
+                now_str=now_str,
+                prefecture=prefecture,
+                city=city,
+                weather_summary=weather_summary,
+                clothes_data=clothes_data
+            )
+        except Exception as e:
+            print(f"プロンプトテンプレートの読み込みに失敗しました: {e}")
         
         # デバッグ用にプロンプトをファイルに保存
-        with open("prompt.txt", "w") as f:
+        with open("prompt.txt", "w", encoding="utf-8") as f:
             f.write(prompt + "\n")
 
         try:
