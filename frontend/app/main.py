@@ -14,6 +14,7 @@ FLET_PORT = int(os.getenv("FLET_PORT", 8550))
 
 def main(page: ft.Page):
     page.title = "fashion checker"
+    page.theme_mode = ft.ThemeMode.LIGHT
     cloth_name_field = ft.Ref[ft.TextField]()
     cloth_text = ""
 
@@ -35,7 +36,7 @@ def main(page: ft.Page):
         try:
             json_data = json.dumps({"name": name})
             response = requests.post(
-                API_URL,
+                f"{API_BASE_URL}/register",
                 data = json_data,
                 headers={"Content-Type": "application/json"},
                 timeout = 10
@@ -73,7 +74,7 @@ def main(page: ft.Page):
             return
         try:
             response = requests.post(
-                API_URL,
+                f"{API_BASE_URL}/generate",
                 json={"name": name},
                 timeout=10
             )
@@ -92,10 +93,10 @@ def main(page: ft.Page):
                 controls=[
                     ft.Column(
                         [
-                            ft.Text("服装チェッカー", size=30, weight="bold", text_align="center"),
+                            ft.Text("服装チェッカー", size=50, weight="bold", text_align="center"),
                             ft.Row(
                                 [
-                                    ft.Text("場所：", size=16),
+                                    ft.Text("場所：", size=20),
                                     ft.Dropdown(
                                         ref=selected_name,
                                         options=[
@@ -109,28 +110,47 @@ def main(page: ft.Page):
                                 alignment="center",
                                 spacing=10,
                             ),
-                            ft.ElevatedButton(
-                                "服装を見る",
-                                on_click=lambda _: fetch_fashion_advice(),
-                                style=ft.ButtonStyle(
-                                    bgcolor=ft.colors.BLUE_900,
-                                    color=ft.colors.WHITE,
-                                    padding=20,
-                                    shape=ft.RoundedRectangleBorder(radius=10),
-                                    text_style=ft.TextStyle(size=20),
+                            ft.Container(
+                                content=ft.TextButton(
+                                    "服装を見る",
+                                    on_click=lambda _: fetch_fashion_advice(),
+                                    style=ft.ButtonStyle(
+                                        bgcolor=ft.Colors.BLUE_700,
+                                        color=ft.Colors.WHITE,
+                                        padding=20,
+                                        shape=ft.RoundedRectangleBorder(radius=10),
+                                        text_style=ft.TextStyle(size=20),
+                                    ),
                                 ),
                                 width=250,
-                            ),
-                            ft.OutlinedButton(
-                                "服装一覧",
-                                on_click=lambda _: page.go("/list"),
-                                style=ft.ButtonStyle(
-                                    padding=15,
-                                    text_style=ft.TextStyle(size=14),
-                                    shape=ft.RoundedRectangleBorder(radius=8),
+                                border_radius=10,
+                                shadow=ft.BoxShadow(
+                                    spread_radius=1,
+                                    blur_radius=3,
+                                    color=ft.Colors.BLACK38,
+                                    offset=ft.Offset(2, 4),
                                 ),
-                                width=150,
                             ),
+                            ft.Container(
+                                content=ft.TextButton(
+                                    "服一覧",
+                                    on_click=lambda _: page.go("/list"),
+                                    style=ft.ButtonStyle(
+                                        bgcolor=ft.Colors.WHITE,
+                                        padding=15,
+                                        text_style=ft.TextStyle(size=14),
+                                        shape=ft.RoundedRectangleBorder(radius=8),
+                                    ),
+                                    width=150,
+                                ),
+                                border_radius=8,
+                                shadow=ft.BoxShadow(
+                                    blur_radius=8,
+                                    spread_radius=1,
+                                    offset=ft.Offset(2, 3),
+                                    color=ft.colors.BLACK38,
+                                ),
+                            )
                         ],
                         alignment="center",
                         horizontal_alignment="center",
