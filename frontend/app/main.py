@@ -46,6 +46,35 @@ def main(page: ft.Page):
             width=width,
     )
 
+    def create_loading_button(text, on_click, ref=None, loading_ref = None, is_loading=False, width=250):
+        return ft.Stack(
+            [
+                ft.ElevatedButton(
+                    text,
+                    ref=ref,
+                    on_click=on_click,
+                    disabled=is_loading,
+                    style=ft.ButtonStyle(
+                        bgcolor=ft.colors.GREY if is_loading else ft.colors.BLUE_900,
+                        color=ft.colors.WHITE,
+                        padding=20,
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        text_style=ft.TextStyle(size=20),
+                    ),
+                    width=width,
+                ),
+                ft.ProgressRing(
+                    ref=loading_ref,
+                    visible=is_loading,
+                    width=30,
+                    height=30,
+                    stroke_width=3,
+                    top=10,  # ボタンの中央に近づける
+                    left=(width - 30) // 2,  # ボタンの真ん中に表示する
+                )
+            ]
+        )
+
     if not hasattr(page, "cloth_list"):
         page.cloth_list = []
 
@@ -90,6 +119,13 @@ def main(page: ft.Page):
 
     def fetch_fashion_advice():
         nonlocal fashion_text
+
+        # ボタンを押した後
+        fashion_button.current.disabled = True
+        fashion_button.current.bgcolor = ft.colors.GREY
+        loading.current.visible = True
+        page.update()
+
         name = selected_name.current.value # ドロップダウンの現在の値を保持
         if not name: # 場所が選択されていない時の処理
             page.dialog = ft.AlertDialog(
@@ -98,6 +134,11 @@ def main(page: ft.Page):
                 actions=[ft.TextButton("OK", on_click=lambda _: page.dialog.close())]
             )
             page.dialog.open = True
+            page.update()
+            # ボタンを戻す
+            fashion_button.current.disabled = False
+            fashion_button.current.bgcolor = ft.colors.BLUE_900
+            loading.current.visible = False
             page.update()
             return
         try:
@@ -119,7 +160,7 @@ def main(page: ft.Page):
             controls=[
                 ft.Column(
                     [
-                        ft.Text(title, size=30, weight="bold", text_align="center")
+                        ft.Text(title, size=50, weight="bold", text_align="center")
                     ] + controls,
                     alignment="center",
                     horizontal_alignment="center",
@@ -154,14 +195,7 @@ def main(page: ft.Page):
                             alignment="center",
                             spacing=10,
                         ),
-                        ft.Row(
-                            [
-                                create_blue_button("服装を見る", on_click=lambda _: fetch_fashion_advice()),
-                                ft.ProgressRing(ref=loading, visible=False),
-                            ],
-                            alignment="center",
-                            spacing=20,
-                        ),
+                        create_loading_button("服装を見る", on_click=lambda _: fetch_fashion_advice(), ref=fashion_button, loading_ref=loading),
                         ft.OutlinedButton(
                             "服装一覧",
                             on_click=lambda _: page.go("/list"),
