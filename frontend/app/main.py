@@ -89,21 +89,56 @@ def main(page: ft.Page):
         page.views.append(
             ft.View(
                 "/",
-                [
-                    ft.Text("服装チェッカー",size=20),
-                    ft.Text("場所:"),
-                    ft.Dropdown(
-                        ref=selected_name,
-                        options=[
-                            ft.dropdown.Option("大阪府_堺市"),
-                            ft.dropdown.Option("大阪府_大阪市"),
-                            ft.dropdown.Option("大阪府_岸和田市"),
+                controls=[
+                    ft.Column(
+                        [
+                            ft.Text("服装チェッカー", size=30, weight="bold", text_align="center"),
+                            ft.Row(
+                                [
+                                    ft.Text("場所：", size=16),
+                                    ft.Dropdown(
+                                        ref=selected_name,
+                                        options=[
+                                            ft.dropdown.Option("大阪府_堺市"),
+                                            ft.dropdown.Option("大阪府_大阪市"),
+                                            ft.dropdown.Option("大阪府_岸和田市"),
+                                        ],
+                                        width=200,
+                                    ),
+                                ],
+                                alignment="center",
+                                spacing=10,
+                            ),
+                            ft.ElevatedButton(
+                                "服装を見る",
+                                on_click=lambda _: fetch_fashion_advice(),
+                                style=ft.ButtonStyle(
+                                    bgcolor=ft.colors.BLUE_900,
+                                    color=ft.colors.WHITE,
+                                    padding=20,
+                                    shape=ft.RoundedRectangleBorder(radius=10),
+                                    text_style=ft.TextStyle(size=20),
+                                ),
+                                width=250,
+                            ),
+                            ft.OutlinedButton(
+                                "服装一覧",
+                                on_click=lambda _: page.go("/list"),
+                                style=ft.ButtonStyle(
+                                    padding=15,
+                                    text_style=ft.TextStyle(size=14),
+                                    shape=ft.RoundedRectangleBorder(radius=8),
+                                ),
+                                width=150,
+                            ),
                         ],
-                        autofocus=True,
-                    ),
-                    ft.CupertinoButton("服装を見る", on_click=lambda _: fetch_fashion_advice()),
-                    ft.CupertinoButton("服装一覧", on_click=lambda _: page.go("/list")),
+                        alignment="center",
+                        horizontal_alignment="center",
+                        spacing=60,
+                    )
                 ],
+                vertical_alignment="center",
+                horizontal_alignment="center",
             )
         )
         if page.route == "/confirm":
