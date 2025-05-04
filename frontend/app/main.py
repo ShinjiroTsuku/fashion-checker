@@ -80,8 +80,8 @@ def main(page: ft.Page):
             return
         enabled = bool(selected_city.current.value)
         fashion_button.current.disabled = not enabled
-        fashion_button.current.bgcolor = ft.colors.BLUE_700 if enabled else ft.colors.GREY_300
-        fashion_button.current.color = ft.colors.WHITE if enabled else ft.colors.GREY_600
+        fashion_button.current.bgcolor = ft.Colors.BLUE_700 if enabled else ft.Colors.GREY_300
+        fashion_button.current.color = ft.Colors.WHITE if enabled else ft.Colors.GREY_600
         page.update()
 
     # 都道府県選択時に市区町村を更新
@@ -128,29 +128,23 @@ def main(page: ft.Page):
             return 
         page.go("/list")
     
-    def delete_cloth(e):
-        nonlocal cloth_text
-        name = cloth_name_field.current.value
-        if not name:
-            page.dialog = ft.AlertDialog(
-                 title=ft.Text("エラー"),
-                 content=ft.Text("服の名前が入力されていません。"),
-                 actions=[ft.TextButton("OK", on_click=lambda _: page.dialog.close())]
-            )
-            page.dialog.open = True
-            page.update()
-            return
+    def delete_cloth(e, item_name):
         try:
-            json_data = json.dumps({"name": name})
+            json_data = json.dumps({"name": item_name})
             response = requests.post(
                 f"{API_BASE_URL}/delete",
-                data = json_data,
+                data=json_data,
                 headers={"Content-Type": "application/json"},
-                timeout = 10
+                timeout=10
             )
             response.raise_for_status()
             data = response.json()
             page.cloth_list = data
+            
+            page.views.pop()
+            page.route = "/list"
+            route_change(None)
+
         except Exception as e:
             page.dialog = ft.AlertDialog(
                 title=ft.Text("エラー"),
@@ -159,8 +153,7 @@ def main(page: ft.Page):
             )
             page.dialog.open = True
             page.update()
-            return 
-        page.go("/list")
+
 
     if not hasattr(page, "weather_icon_url"):
         page.weather_icon_url = ""
@@ -174,7 +167,7 @@ def main(page: ft.Page):
 
         # ローディング開始
         fashion_button.current.disabled = True
-        fashion_button.current.bgcolor = ft.colors.GREY
+        fashion_button.current.bgcolor = ft.Colors.GREY
         loading.current.visible = True
         page.update()
 
@@ -200,8 +193,8 @@ def main(page: ft.Page):
             text,
             on_click=on_click,
             style=ft.ButtonStyle(
-                bgcolor=ft.colors.BLUE_700,
-                color=ft.colors.WHITE,
+                bgcolor=ft.Colors.BLUE_700,
+                color=ft.Colors.WHITE,
                 padding=20,
                 shape=ft.RoundedRectangleBorder(radius=10),
                 text_style=ft.TextStyle(size=20),
@@ -214,8 +207,8 @@ def main(page: ft.Page):
             text,
             on_click=on_click,
             style=ft.ButtonStyle(
-                bgcolor=ft.colors.WHITE,
-                color=ft.colors.BLUE_700,
+                bgcolor=ft.Colors.WHITE,
+                color=ft.Colors.BLUE_700,
                 padding=20,
                 shape=ft.RoundedRectangleBorder(radius=10),
                 text_style=ft.TextStyle(size=20),
@@ -272,7 +265,7 @@ def main(page: ft.Page):
                             spacing=10,
                         ),
                         padding=20,
-                        bgcolor=ft.colors.with_opacity(0.2, ft.colors.SURFACE_VARIANT),
+                        bgcolor=ft.Colors.with_opacity(0.2, ft.Colors.ON_SURFACE_VARIANT),
                         border_radius=10,
                         width=300,
                         expand=True,
@@ -312,23 +305,22 @@ def main(page: ft.Page):
                         ], alignment="center", spacing=10),
 
                         ft.Stack([
-                            ft.ElevatedButton(
-                                "服装を見る",
-                                ref=fashion_button,
-                                on_click=fetch_fashion_advice,
-                                disabled=True,
-                                style=ft.ButtonStyle(
-                                    padding=20,
-                                    shape=ft.RoundedRectangleBorder(radius=10),
-                                    text_style=ft.TextStyle(size=20),
+                            ft.Row([
+                                ft.ElevatedButton(
+                                    "服装を見る",
+                                    ref=fashion_button,
+                                    on_click=fetch_fashion_advice,
+                                    disabled=True,
+                                    style=ft.ButtonStyle(
+                                        padding=20,
+                                        shape=ft.RoundedRectangleBorder(radius=10),
+                                        text_style=ft.TextStyle(size=20),
+                                    ),
+                                    width=250,
                                 ),
-                                width=250,
-                            ),
-                            ft.ProgressRing(ref=loading, visible=False, width=30, height=30, stroke_width=3, top=10, left=110)
-                        ],
-                        alignment="center",
-                        spacing=20,
-                        ),
+                            ]),
+                            ft.ProgressRing(ref=loading, visible=False, width=30, height=30, stroke_width=3),
+                        ], width=250, height=50),
                     ft.OutlinedButton(
                         "服一覧",
                         on_click=lambda _: page.go("/list"),
@@ -388,7 +380,7 @@ def main(page: ft.Page):
                                             icon=ft.icons.DELETE,
                                             icon_color="red",
                                             tooltip="削除",
-                                            on_click=delete_cloth
+                                            on_click=lambda e, item=item: delete_cloth(e, item)
                                         ),
                                         width=200,  # 中央よりやや右に表示
                                         alignment=ft.alignment.center_right,
@@ -418,19 +410,7 @@ def main(page: ft.Page):
             page.views.append(
                 common_view("服一覧", controls)
             )
-
-        elif page.route == "/list":
-            controls = []
-            if page.cloth_list:
-                controls += [ft.Container(content=ft.Text(item), padding=2, alignment=ft.alignment.center) for item in page.cloth_list]
-            controls.append(
-                ft.Row([
-                    create_white_button("戻る", on_click=lambda _: page.go("/")),
-                    create_blue_button("服装を登録する", on_click=lambda _: page.go("/register"))
-                ], alignment="center", spacing=20)
-            )
-            page.views.append(common_view("服装一覧", controls))
-
+            
         elif page.route == "/register":
             page.views.append(
                 common_view(
