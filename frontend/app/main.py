@@ -13,6 +13,7 @@ FLET_PORT = int(os.getenv("FLET_PORT", 8550))
 
 def main(page: ft.Page):
     page.title = "fashion checker"
+    page.theme_mode = ft.ThemeMode.LIGHT
     cloth_name_field = ft.Ref[ft.TextField]()
     cloth_text = ""
     loading = ft.Ref[ft.ProgressRing]() # ローディングアニメーション用
@@ -23,8 +24,8 @@ def main(page: ft.Page):
             text,
             on_click=on_click,
             style=ft.ButtonStyle(
-                bgcolor=ft.colors.BLUE_900,
-                color=ft.colors.WHITE,
+                bgcolor=ft.Colors.BLUE_700,
+                color=ft.Colors.WHITE,
                 padding=20,
                 shape=ft.RoundedRectangleBorder(radius=10),
                 text_style=ft.TextStyle(size=20),
@@ -37,8 +38,8 @@ def main(page: ft.Page):
             text,
             on_click=on_click,
             style=ft.ButtonStyle(
-                bgcolor=ft.colors.WHITE,
-                color=ft.colors.BLUE_900,
+                bgcolor=ft.Colors.WHITE,
+                color=ft.Colors.BLUE_700,
                 padding=20,
                 shape=ft.RoundedRectangleBorder(radius=10),
                 text_style=ft.TextStyle(size=20),
@@ -119,7 +120,7 @@ def main(page: ft.Page):
             controls=[
                 ft.Column(
                     [
-                        ft.Text(title, size=30, weight="bold", text_align="center")
+                        ft.Text(title, size=50, weight="bold", text_align="center")
                     ] + controls,
                     alignment="center",
                     horizontal_alignment="center",
@@ -129,6 +130,24 @@ def main(page: ft.Page):
             vertical_alignment="center",
             horizontal_alignment="center",
         )
+    
+    # 選択されていればボタンを有効にし、されていなければ無効にする
+    selected_name = ft.Ref[ft.Dropdown]()
+    view_button = ft.Ref[ft.ElevatedButton]()
+    def update_view_button_state():
+        if view_button.current is None:
+            return
+        is_enabled = bool(selected_name.current.value)
+        view_button.current.disabled = not is_enabled
+        view_button.current.bgcolor = ft.Colors.BLUE_700 if is_enabled else ft.Colors.GREY_300
+        view_button.current.color = ft.Colors.WHITE if is_enabled else ft.Colors.GREY_600
+        page.update()
+    def on_dropdown_change(e):
+        update_view_button_state()
+        if view_button.current is None:
+            return  # まだボタンが描画されていないなら何もしない
+        view_button.current.disabled = not bool(selected_name.current.value)
+        page.update()
 
     def route_change(route):
         page.views.clear()
@@ -138,25 +157,43 @@ def main(page: ft.Page):
                 common_view(
                     "服装チェッカー",
                     [
+                        ft.Container(height=20),
                         ft.Row(
                             [
-                                ft.Text("場所：", size=16),
+                                ft.Text("場所：", size=20),
                                 ft.Dropdown(
                                     ref=selected_name,
+                                    on_change=on_dropdown_change,
                                     options=[
                                         ft.dropdown.Option("大阪府_堺市"),
                                         ft.dropdown.Option("大阪府_大阪市"),
                                         ft.dropdown.Option("大阪府_岸和田市"),
                                     ],
-                                    width=200,
+                                    width=250,
                                 ),
+                                ft.Container(width=60),
                             ],
                             alignment="center",
                             spacing=10,
                         ),
+                        ft.Container(height=20),
                         ft.Row(
                             [
-                                create_blue_button("服装を見る", on_click=lambda _: fetch_fashion_advice()),
+                                # デフォルトで押せないようにするため、ここだけcreate_blue_button使ってません
+                                ft.ElevatedButton(
+                                    "服装を見る",
+                                    ref=view_button,
+                                    on_click=lambda _: fetch_fashion_advice(),
+                                    disabled=True,
+                                    # bgcolor=ft.Colors.BLUE_700,
+                                    # color=ft.Colors.WHITE,
+                                    style=ft.ButtonStyle(
+                                        padding=20,
+                                        shape=ft.RoundedRectangleBorder(radius=10),
+                                        text_style=ft.TextStyle(size=20),
+                                    ),
+                                    width=250,
+                                ),
                                 ft.ProgressRing(ref=loading, visible=False),
                             ],
                             alignment="center",
