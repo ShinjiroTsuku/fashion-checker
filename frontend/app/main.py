@@ -8,6 +8,7 @@ import os
 # 環境変数から取得するか、デフォルト値を設定
 API_BASE_URL = os.getenv("API_BASE_URL", "http://backend:8000")
 API_URL = f"{API_BASE_URL}/register"
+API_URL_GENERATE = f"{API_BASE_URL}/generate"
 
 # Fletアプリがリッスンするポート (Dockerfile CMDと合わせる)
 FLET_PORT = int(os.getenv("FLET_PORT", 8550))
@@ -73,7 +74,7 @@ def main(page: ft.Page):
             return
         try:
             response = requests.post(
-                API_URL,
+                API_URL_GENERATE,
                 json={"name": name},
                 timeout=10
             )
