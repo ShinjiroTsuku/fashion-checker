@@ -127,6 +127,40 @@ def main(page: ft.Page):
             page.update()
             return 
         page.go("/list")
+    
+    def delete_cloth(e):
+        nonlocal cloth_text
+        name = cloth_name_field.current.value
+        if not name:
+            page.dialog = ft.AlertDialog(
+                 title=ft.Text("エラー"),
+                 content=ft.Text("服の名前が入力されていません。"),
+                 actions=[ft.TextButton("OK", on_click=lambda _: page.dialog.close())]
+            )
+            page.dialog.open = True
+            page.update()
+            return
+        try:
+            json_data = json.dumps({"name": name})
+            response = requests.post(
+                f"{API_BASE_URL}/delete",
+                data = json_data,
+                headers={"Content-Type": "application/json"},
+                timeout = 10
+            )
+            response.raise_for_status()
+            data = response.json()
+            page.cloth_list = data
+        except Exception as e:
+            page.dialog = ft.AlertDialog(
+                title=ft.Text("エラー"),
+                content=ft.Text(f"エラー発生: {e}"),
+                actions=[ft.TextButton("OK", on_click=lambda _: page.dialog.close())]
+            )
+            page.dialog.open = True
+            page.update()
+            return 
+        page.go("/list")
 
     if not hasattr(page, "weather_icon_url"):
         page.weather_icon_url = ""
@@ -194,9 +228,14 @@ def main(page: ft.Page):
         return ft.View(
             route=page.route,
             controls=[
-                ft.Column([
-                    ft.Text(title, size=50, weight="bold", text_align="center")
-                ] + controls, alignment="center", horizontal_alignment="center", spacing=40)
+                ft.Column(
+                    [
+                        ft.Text(title, size=50, weight=ft.FontWeight.W_500, text_align="center")
+                    ] + controls,
+                    alignment="center",
+                    horizontal_alignment="center",
+                    spacing=40,
+                )
             ],
             vertical_alignment="center",
             horizontal_alignment="center"
@@ -283,12 +322,19 @@ def main(page: ft.Page):
                                     shape=ft.RoundedRectangleBorder(radius=10),
                                     text_style=ft.TextStyle(size=20),
                                 ),
-                                width=250
+                                width=250,
                             ),
                             ft.ProgressRing(ref=loading, visible=False, width=30, height=30, stroke_width=3, top=10, left=110)
-                        ]),
+                        ],
+                        alignment="center",
+                        spacing=20,
+                        ),
+                    ft.OutlinedButton(
+                        "服一覧",
+                        on_click=lambda _: page.go("/list"),
+                        width=150,
+                    )
 
-                        ft.OutlinedButton("服装一覧", on_click=lambda _: page.go("/list"), width=150)
                     ]
                 )
             )
@@ -296,7 +342,7 @@ def main(page: ft.Page):
         elif page.route == "/confirm":
             page.views.append(
                 common_view(
-                    "服装の確認",
+                    "服装の提案",
                     [
                         create_speech_bubble(fashion_text),
                         ft.Row(
@@ -309,24 +355,69 @@ def main(page: ft.Page):
                         ),
                     ]
                 )
-            ) 
-            
+            )
+
+        # list画面
+        if page.route == "/list":
+            controls = []
+
+            controls.append(
+                ft.Container(
+                    content=ft.Divider(
+                        height=1,
+                        thickness=1,
+                        color=ft.Colors.GREY_400,
+                    ),
+                    padding=ft.padding.only(left=200, right=200)
+                )
+            )
+
+            if hasattr(page, "cloth_list") and page.cloth_list:
+                for item in page.cloth_list:
+                    controls.append(
+                        ft.Container(
+                            content=ft.Row(
+                                [
+                                    ft.Container(
+                                        content=ft.Text(item),
+                                        width=200,  # 中央よりやや左に表示（必要に応じて調整）
+                                        alignment=ft.alignment.center_left,
+                                    ),
+                                    ft.Container(
+                                        content=ft.IconButton(
+                                            icon=ft.icons.DELETE,
+                                            icon_color="red",
+                                            tooltip="削除",
+                                            on_click=delete_cloth
+                                        ),
+                                        width=200,  # 中央よりやや右に表示
+                                        alignment=ft.alignment.center_right,
+                                    ),
+                                ],
+                                alignment="center",  # Row 全体を中央寄せにする
+                                spacing=20,
+                            ),
+                            padding=5,
+                            margin=ft.margin.only(bottom=2),
+                        )
+                    )
+
+            # controls.append(ft.Container(height=20))
+
+            controls.append(
+                ft.Row(
+                    [
+                        create_white_button("戻る", on_click=lambda _: page.go("/")),
+                        create_blue_button("服を登録する", on_click=lambda _: page.go("/register")),
+                    ],
+                    alignment="center",
+                    spacing=20,
+                )
+            )
+
             page.views.append(
-                common_view(
-                    "服装の確認",
-                    [
-                        create_speech_bubble(fashion_text),
-                        ft.Row(
-                            [
-                                create_white_button("戻る", on_click=lambda _: page.go("/")),
-                                create_blue_button("再生成する", on_click=lambda _: fetch_fashion_advice()),
-                            ],
-                            alignment="center",
-                            spacing=20,
-                        ),
-                    ]
-                )
-            ) 
+                common_view("服一覧", controls)
+            )
 
         elif page.route == "/list":
             controls = []
@@ -343,7 +434,7 @@ def main(page: ft.Page):
         elif page.route == "/register":
             page.views.append(
                 common_view(
-                    "服装登録",
+                    "服の登録",
                     [
                         ft.Text("服の名称:"),
                         ft.TextField(ref=cloth_name_field, width=300),
