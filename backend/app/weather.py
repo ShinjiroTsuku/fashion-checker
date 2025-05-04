@@ -57,15 +57,15 @@ def get_weather_forecast_by_coords(lat, lon, api_key):
     
     utc_now = datetime.datetime.utcnow()
     start_time = utc_now + datetime.timedelta(hours=9)  # UTCから日本時間（+9時間）
-    today = start_time.replace(hour=23, minute=59, second=59)  # 今日の終わり
     # APIのエンドポイントURL
-    url = "https://api.openweathermap.org/data/2.5/forecast"
+    url = "https://api.openweathermap.org/data/3.0/onecall"
     
     # パラメータの設定
     params = {
         "lat": lat,  # 緯度
         "lon": lon,  # 経度
         "appid": api_key,  # APIキー
+        "exclude": "current,minutely,alerts",  # 1時間ごとの天気情報のみ取得
         "units": "metric",  # 摂氏で温度を取得
         "lang": "ja"  # 日本語で結果を取得
     }
@@ -79,26 +79,18 @@ def get_weather_forecast_by_coords(lat, lon, api_key):
             
         # 必要なデータだけを抽出
         result = {
-            "city": data["city"]["name"],
-            "country": data["city"]["country"],
-            "coordinates": {
-                "latitude": lat,
-                "longitude": lon
-            },
-            "forecasts": []
+            "forecasts": [],
+            "daily_icon_url": f"https://openweathermap.org/img/wn/{data['daily'][0]['weather'][0]['icon']}@2x.png",
         }
         
         # 3時間ごとの予報データを処理
-        for forecast in data["list"]:
+        for forecast in data["hourly"]:
             # UTC時間からJST(+9時間)に変換
             utc_time = datetime.datetime.utcfromtimestamp(forecast["dt"])
             forecast_time = utc_time + datetime.timedelta(hours=9)  # UTCから日本時間へ
-            
+
             # 指定した開始時刻以降のデータのみ処理
-            if start_time <= forecast_time <= today:
-                # 降水量の取得（存在しない場合は0）
-                rain_3h = forecast.get("rain", {}).get("3h", 0)
-                
+            if forecast_time:
                 # 必要なデータを抽出
                 forecast_data = {
                     "datetime": forecast_time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -107,12 +99,15 @@ def get_weather_forecast_by_coords(lat, lon, api_key):
                         "description": forecast["weather"][0]["description"],
                         "icon": forecast["weather"][0]["icon"]
                     },
-                    "temperature": forecast["main"]["temp"],
-                    "feels_like": forecast["main"]["feels_like"],
-                    "precipitation": rain_3h
+                    "temperature": forecast["temp"],
+                    "feels_like": forecast["feels_like"],  # 体感温度
+                    "prob_precipitation": forecast["pop"],  # 降水確率
+                    "precipitation": forecast.get("rain", {}).get("1h", 0),  # 1時間あたりの降水量
                 }
-                
+
                 result["forecasts"].append(forecast_data)
+            else:
+                print("データが見つかりませんでした。")
         
         return result
     else:
