@@ -210,3 +210,18 @@ def delete_clothes(clothes: ClothesToDelete):
     except Exception as e:
         print(f"服装の削除中にエラーが発生しました: {e}")
         raise HTTPException(status_code=500, detail=f"服装の削除中にエラーが発生しました: {str(e)}")
+    
+@app.get("/list", response_model=list[str])
+def get_clothes_list():
+    """
+    保存されている服のリストを取得する
+    """
+    try:
+        # ファイルから服装リストを読み込む
+        with open("data/clothes_list.txt", "r", encoding="utf-8") as f:
+            clothes_list = [line.strip() for line in f.readlines() if line.strip()]
+        
+        return clothes_list
+    except Exception as e:
+        print(f"服装リストの取得中にエラーが発生しました: {e}")
+        return []  # エラー時は空のリストを返す
